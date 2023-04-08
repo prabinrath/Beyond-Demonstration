@@ -7,7 +7,7 @@ ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
 ENV_ID = "Hopper-v3"
-env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+env_factory = lambda: gym.make(ENV_ID) # variable horizon is important for training the expert
 
 venv = make_vec_env(env_factory, n_envs=4)
 expert = algo[ALGO_ID]("MlpPolicy", venv, verbose=1)
