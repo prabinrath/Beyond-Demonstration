@@ -14,7 +14,7 @@ import numpy as np
 ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
-EXPERT_ID = ALGO_ID+"-500"
+EXPERT_ID = ALGO_ID+"-35"
 
 ENV_ID = "Hopper-v3"
 
@@ -31,7 +31,7 @@ reward_net = BasicShapedRewardNet(
     normalize_input_layer=RunningNorm
 )
 
-rollouts = load('demonstrations/'+ENV_ID+'-'+EXPERT_ID)
+rollouts = load('demonstrations/sub-optimal/'+ENV_ID+'-'+EXPERT_ID)
 airl_trainer = AIRL(
     demonstrations=rollouts,
     demo_batch_size=1024,

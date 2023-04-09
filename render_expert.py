@@ -3,10 +3,10 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import gym
 import time
 
-ALGO_ID = "PPO"
+ALGO_ID = "SAC"
 algo = {"PPO": PPO, "SAC": SAC}
 
-ENV_ID = "Hopper-v3"
+ENV_ID = "Ant-v3"
 optimality = "sub-optimal/"
 expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
 

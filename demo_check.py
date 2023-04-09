@@ -1,11 +1,11 @@
 from imitation.data.types import load
 import numpy as np
 
-EXPERT_ID = "PPO-35"
-ENV_ID = "Hopper-v3"
+EXPERT_ID = "SAC-10"
+ENV_ID = "Ant-v3"
 
 optimality = "sub-optimal/"
-optimality = ""
+# optimality = ""
 rollouts = load('demonstrations/'+optimality+ENV_ID+'-'+EXPERT_ID)
 
 rewards = []
