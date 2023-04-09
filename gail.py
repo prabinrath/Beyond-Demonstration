@@ -16,8 +16,11 @@ algo = {"PPO": PPO, "SAC": SAC}
 
 EXPERT_ID = ALGO_ID+"-500"
 
-ENV_ID = "HalfCheetah-v3"
-env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000) # variable horizon should be disabled for imitation
+ENV_ID = "Hopper-v3"
+
+# variable horizon should be disabled for imitation
+env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False), 1000)
+# env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000)
 
 venv = make_vec_env(env_factory, n_envs=4)
 

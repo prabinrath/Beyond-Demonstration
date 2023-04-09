@@ -6,7 +6,7 @@ from stable_baselines3.common.env_util import make_vec_env
 ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
-ENV_ID = "HalfCheetah-v3"
+ENV_ID = "Hopper-v3"
 env_factory = lambda: gym.make(ENV_ID) # variable horizon is important for training the expert
 
 venv = make_vec_env(env_factory, n_envs=4)
