@@ -14,11 +14,14 @@ expert = algo[ALGO_ID]("MlpPolicy", venv, verbose=1)
 
 reward, _ = evaluate_policy(expert, venv, 10)
 print("Avg reward before training:", reward)
-expert.learn(total_timesteps=1000000)
+expert.learn(total_timesteps=500000)
 reward, _ = evaluate_policy(expert, venv, 10)
 print("Avg reward after training:", reward)
 
 expert.save('checkpoints/expert_policies/'+ENV_ID+'-'+ALGO_ID)
+
+optimality = "sub-optimal/"
+expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
 
 from imitation.data.types import save
 from imitation.data import rollout
@@ -26,7 +29,7 @@ from imitation.data.wrappers import RolloutInfoWrapper
 from stable_baselines3.common.vec_env import DummyVecEnv
 import numpy as np
 
-NUM_EPISODES = 500
+NUM_EPISODES = 10
 rollouts = rollout.rollout(
     expert,
     DummyVecEnv([lambda: RolloutInfoWrapper(env_factory())]),

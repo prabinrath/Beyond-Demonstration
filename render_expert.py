@@ -7,7 +7,8 @@ ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
 ENV_ID = "Hopper-v3"
-expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+ENV_ID+'-'+ALGO_ID)
+optimality = "sub-optimal/"
+expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
 
 env = gym.make(ENV_ID)
 reward, _ = evaluate_policy(expert, env, 10)

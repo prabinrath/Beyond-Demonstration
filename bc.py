@@ -6,7 +6,7 @@ import numpy as np
 rng = np.random.default_rng(0)
 
 EXPERT_ID = "PPO-500"
-ENV_ID = "Hopper-v3"
+ENV_ID = "HalfCheetah-v3"
 env = gym.make(ENV_ID) # variable horizon is true for fair evaluation
 
 rollouts = load('demonstrations/'+ENV_ID+'-'+EXPERT_ID)
