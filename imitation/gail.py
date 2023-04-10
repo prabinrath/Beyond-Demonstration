@@ -2,9 +2,9 @@ from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.env_util import make_vec_env
 
-from imitation.algorithms.adversarial.airl import AIRL
+from imitation.algorithms.adversarial.gail import GAIL
 from imitation.data.types import load
-from imitation.rewards.reward_nets import BasicShapedRewardNet
+from imitation.rewards.reward_nets import BasicRewardNet
 from imitation.util.networks import RunningNorm
 
 import gym
@@ -25,14 +25,14 @@ env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False)
 venv = make_vec_env(env_factory, n_envs=4)
 
 learner = algo[ALGO_ID]("MlpPolicy", venv) 
-reward_net = BasicShapedRewardNet(
+reward_net = BasicRewardNet(
     venv.observation_space,
     venv.action_space,
     normalize_input_layer=RunningNorm
 )
 
 rollouts = load('demonstrations/sub-optimal/'+ENV_ID+'-'+EXPERT_ID)
-airl_trainer = AIRL(
+gail_trainer = GAIL(
     demonstrations=rollouts,
     demo_batch_size=1024,
     gen_replay_buffer_capacity=2048,
@@ -44,6 +44,6 @@ airl_trainer = AIRL(
 
 reward, _ = evaluate_policy(learner, venv, 10)
 print("Avg reward before training:", reward)
-airl_trainer.train(300000)
+gail_trainer.train(500000)
 reward, _ = evaluate_policy(learner, venv, 10)
 print("Avg reward after training:", reward)
