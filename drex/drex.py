@@ -80,6 +80,7 @@ class DREX(BaseImitationAlgorithm):
         self.dataset = PreferenceDataset(max_size=n_pairs) # allow infinite queue size
 
     def generate_ranked_trajectories(self, noise_schedule, k, env, expert, action_noise_type, rng):
+        self.logger.log(f"Generating ranked trajectories with schedule {noise_schedule}")
         ranked_trajectories = {}
         for noise_level in noise_schedule:
             rollouts = rollout.rollout(
@@ -93,6 +94,7 @@ class DREX(BaseImitationAlgorithm):
         return ranked_trajectories
 
     def generate_fragments(self, ranked_trajectories, n_pairs, fragment_len, noise_pref_gap):
+        self.logger.log(f"Generating {n_pairs} fragment pairs each of length {fragment_len}")
         noise_schedule = list(ranked_trajectories.keys())
         fragments = []
         for _ in range(n_pairs):
@@ -143,6 +145,7 @@ class DREX(BaseImitationAlgorithm):
     def train(self, n_epochs):
         reward_loss, reward_accuracy = None, None
         for e in range(n_epochs):
+            self.logger.log(f"Starting epoch {e}")
             fragments_batch = self.generate_fragments(self.ranked_trajectories, 
                                         self.n_pairs,
                                         self.fragment_len,

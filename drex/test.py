@@ -14,23 +14,41 @@ import numpy as np
 rng = np.random.default_rng(0)
 
 from .drex import DREX
+'''
+Deltas IMPLEMENTED:
+- Luce preference with discount_factor, noise_prob, clipped reward differences (DRLHP)
+- Mixed sampling
+- Fixed horizon trajectories
+
+Deltas TODO:
+- Use custom rewards (more hidden units, rnn, attention)
+- Use regularizers in rewards trainer
+- Implement custom reward trainer with
+    - separate data subset for each member 
+    - early stopping (imitation.testing.reward_improvement)
+- A better preference loss (aLRP?)
+
+PPT TODO:
+- GT vs NN reward comparison
+- Video wrapper for showcasing test results
+'''
 
 def main():
-    EXPERT_ID = "PPO-35"
-    ENV_ID = "Hopper-v3"
+    EXPERT_ID = "PPO-10"
+    ENV_ID = "HalfCheetah-v3"
     # variable horizon should be disabled for sampling equal length trajectories
-    env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False), 1000)
-    # env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000)
+    # env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False), 1000)
+    env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000)
 
     demo_path = 'demonstrations/sub-optimal/'+ENV_ID+'-'+EXPERT_ID
 
     K = 5 # rollouts per noise level
-    N_NOISE_LEVELS = 20
-    N_REWARD_MODELS = 3
-    N_EPOCHS = 5 # reward training epochs
-    FRAGMENT_LEN = 50
-    N_PAIRS = 5000
-    NOISE_PREF_GAP = 0.3
+    N_NOISE_LEVELS = 20 # noise levels
+    N_REWARD_MODELS = 3 # ensemble reward models
+    N_EPOCHS = 10 # reward training epochs
+    FRAGMENT_LEN = 50 # length of trajectory fragments
+    N_PAIRS = 5000 # batch size for each training epoch
+    NOISE_PREF_GAP = 0.3 # min noise gap between trajectory pairs
 
     # Behavior cloning policy
     env = env_factory()
@@ -40,7 +58,7 @@ def main():
         demonstrations=load(demo_path),
         rng=rng,
     )
-    bc_trainer.train(n_epochs=5)
+    bc_trainer.train(n_epochs=10)
 
     # Reward model
     reward_members = [BasicRewardNet(
@@ -56,7 +74,7 @@ def main():
     )
 
     # Luce-Shephard preference model
-    preference_model = PreferenceModel(reward_net)
+    preference_model = PreferenceModel(reward_net, noise_prob=0, discount_factor=1)
     reward_trainer = EnsembleTrainer(
         preference_model=preference_model,
         loss=CrossEntropyRewardLoss(),
@@ -79,5 +97,7 @@ def main():
     )
     reward_loss, reward_accuracy = drex_trainer.train(N_EPOCHS)
     print(f"Reward Loss: {reward_loss}, Reward Acc: {reward_accuracy}")
+
+
 
 main()
