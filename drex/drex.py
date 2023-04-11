@@ -1,24 +1,14 @@
-from imitation.rewards.reward_nets import RewardEnsemble, BasicRewardNet
 from imitation.data import rollout
 from imitation.algorithms.base import BaseImitationAlgorithm
 from imitation.data.wrappers import RolloutInfoWrapper
-from imitation.data.types import load, TrajectoryWithRew
-from imitation.algorithms.bc import BC
-from imitation.util.networks import RunningNorm
-from imitation.algorithms.preference_comparisons import (
-        PreferenceModel, 
-        EnsembleTrainer,
-        CrossEntropyRewardLoss,
-        PreferenceDataset
-    )
+from imitation.data.types import TrajectoryWithRew
+from imitation.algorithms.preference_comparisons import PreferenceDataset
 
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from stable_baselines3.common.env_util import make_vec_env
 
 import numpy as np
-rng = np.random.default_rng(0)
 
 
 class NoiseInjectedPolicyWrapper(BasePolicy):
@@ -59,56 +49,34 @@ class NoiseInjectedPolicyWrapper(BasePolicy):
 
 class DREX(BaseImitationAlgorithm):
     def __init__(self, 
-                 demo_path,
+                 expert,
+                 reward_trainer,
                  env_factory,
                  n_noise_levels,
                  k,
-                 n_reward_models,
                  n_pairs,
                  noise_pref_gap,
-                 fragment_len
+                 fragment_len,
+                 rng
             ):
+        
+        super().__init__(
+            custom_logger=None,
+            allow_variable_horizon=False,
+        )
 
         self.n_pairs = n_pairs
         self.fragment_len = fragment_len
         self.noise_pref_gap = noise_pref_gap
 
-        # Behavior Cloning
-        env = env_factory()
-        bc_trainer = BC(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            demonstrations=load(demo_path),
-            rng=rng,
-        )
-        bc_trainer.train(n_epochs=5)
+        self.reward_trainer = reward_trainer
+        self.reward_trainer.logger = self.logger
+        
         noise_schedule = np.linspace(0,1,n_noise_levels)
-        self.ranked_trajectories = self.generate_ranked_trajectories(noise_schedule, k, env, 
-                                                        bc_trainer.policy, action_noise_type='normal',
+        self.ranked_trajectories = self.generate_ranked_trajectories(noise_schedule, k, env_factory(), 
+                                                        expert, action_noise_type='normal',
                                                         rng=rng)
-        self.log_rankings(self.ranked_trajectories)
-
-        # TREX
-        venv = make_vec_env(env_factory, n_envs=4)
-        reward_members = [BasicRewardNet(
-                            venv.observation_space,
-                            venv.action_space,
-                            use_action=False, # TREX has state only reward functions
-                            normalize_input_layer=RunningNorm)
-                            for _ in range(n_reward_models)]
-        self.reward_net = RewardEnsemble(
-            venv.observation_space, 
-            venv.action_space, 
-            members=reward_members
-        )
-        preference_model = PreferenceModel(self.reward_net)
-        self.reward_trainer = EnsembleTrainer(
-            preference_model=preference_model,
-            loss=CrossEntropyRewardLoss(),
-            batch_size=64,
-            lr=1e-4,
-            rng=rng,
-        )
+        self.log_rankings(self.ranked_trajectories)        
         self.dataset = PreferenceDataset(max_size=n_pairs) # allow infinite queue size
 
     def generate_ranked_trajectories(self, noise_schedule, k, env, expert, action_noise_type, rng):
@@ -165,19 +133,29 @@ class DREX(BaseImitationAlgorithm):
                 rewards.append(np.mean(np.sum(roll.rews)))
                 samples += roll.obs.shape[0]
 
-            print('Noise: ', noise_level)
-            print('#Samples: ', samples)
-            print('Best: ', max(rewards))
-            print('Worst: ', min(rewards))
-            print('Avg: ', np.mean(np.array(rewards)))
-            print('-----------------------------------')
+            self.logger.log(f"Noise: {noise_level}")
+            self.logger.log(f"#Samples: {samples}")
+            self.logger.log(f"Best: {max(rewards)}")
+            self.logger.log(f"Worst: {min(rewards)}")
+            self.logger.log(f"Avg: {np.mean(np.array(rewards))}")
+            self.logger.log(f"-----------------------------------")
 
     def train(self, n_epochs):
-        for _ in range(n_epochs):
+        reward_loss, reward_accuracy = None, None
+        for e in range(n_epochs):
             fragments_batch = self.generate_fragments(self.ranked_trajectories, 
                                         self.n_pairs,
                                         self.fragment_len,
                                         self.noise_pref_gap)
-            preferences_batch = np.ones((self,n_epochs,), dtype=np.float32)
+            preferences_batch = np.ones((self.n_pairs,), dtype=np.float32)
             self.dataset.push(fragments_batch, preferences_batch) # should evict previous batch as it acts like a deque
             self.reward_trainer.train(self.dataset)
+
+            base_key = self.logger.get_accumulate_prefixes() + "reward/final/train"
+            assert f"{base_key}/loss" in self.logger.name_to_value
+            assert f"{base_key}/accuracy" in self.logger.name_to_value
+            reward_loss = self.logger.name_to_value[f"{base_key}/loss"]
+            reward_accuracy = self.logger.name_to_value[f"{base_key}/accuracy"]
+            self.logger.dump(e+1)
+        
+        return reward_loss, reward_accuracy
