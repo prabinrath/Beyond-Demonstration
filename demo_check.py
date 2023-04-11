@@ -12,7 +12,7 @@ rewards = []
 samples = 0
 for roll in rollouts:
     rewards.append(np.mean(np.sum(roll.rews)))
-    samples += roll.obs.shape[0]
+    samples += len(roll)
 
 print('#Samples: ', samples)
 print('Best: ', max(rewards))
