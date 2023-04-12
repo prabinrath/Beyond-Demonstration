@@ -8,6 +8,7 @@ algo = {"PPO": PPO, "SAC": SAC}
 
 ENV_ID = "HalfCheetah-v3"
 optimality = "sub-optimal/"
+# optimality = ""
 expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
 
 env = gym.make(ENV_ID)

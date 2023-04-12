@@ -93,18 +93,19 @@ class DREX(BaseImitationAlgorithm):
         
         return ranked_trajectories
 
-    def generate_fragments(self, ranked_trajectories, n_pairs, fragment_len, noise_pref_gap):
-        self.logger.log(f"Generating {n_pairs} fragment pairs each of length {fragment_len}")
+    def generate_fragments_and_preferences(self, ranked_trajectories, n_pairs, fragment_len, noise_pref_gap):
+        self.logger.log(f"Generated {n_pairs} fragment pairs of length {fragment_len} and preferences")
         noise_schedule = list(ranked_trajectories.keys())
         fragments = []
-        for _ in range(n_pairs):
+        preferences = np.zeros((n_pairs,), dtype=np.float32)
+        for i in range(n_pairs):
             idx_1, idx_2 = np.random.choice(len(noise_schedule), size=2, replace=False)
             while abs(noise_schedule[idx_1]-noise_schedule[idx_2])<noise_pref_gap:
                 idx_1, idx_2 = np.random.choice(len(noise_schedule), size=2, replace=False)
-
-            # idx_1 is always preferred
-            if noise_schedule[idx_1] > noise_schedule[idx_2]:
-                idx_1, idx_2 = idx_2, idx_1
+            
+            # less noise has higher preference
+            if noise_schedule[idx_1] < noise_schedule[idx_2]:
+                preferences[i] = 1.0
             
             trajectories_1 = ranked_trajectories[noise_schedule[idx_1]]
             trajectories_2 = ranked_trajectories[noise_schedule[idx_2]]
@@ -124,7 +125,8 @@ class DREX(BaseImitationAlgorithm):
                                 trajectory_2.terminal,
                                 trajectory_2.rews[idx_2:idx_2+fragment_len])                              
                 ))
-        return fragments
+
+        return fragments, preferences
 
     def log_rankings(self, ranked_trajectories):
         for noise_level in ranked_trajectories:
@@ -132,7 +134,7 @@ class DREX(BaseImitationAlgorithm):
             samples = 0
             rollouts = ranked_trajectories[noise_level]
             for roll in rollouts:
-                rewards.append(np.mean(np.sum(roll.rews)))
+                rewards.append(np.sum(roll.rews))
                 samples += roll.obs.shape[0]
 
             self.logger.log(f"Noise: {noise_level}")
@@ -146,11 +148,10 @@ class DREX(BaseImitationAlgorithm):
         reward_loss, reward_accuracy = None, None
         for e in range(n_epochs):
             self.logger.log(f"Starting epoch {e}")
-            fragments_batch = self.generate_fragments(self.ranked_trajectories, 
+            fragments_batch, preferences_batch = self.generate_fragments_and_preferences(self.ranked_trajectories, 
                                         self.n_pairs,
                                         self.fragment_len,
                                         self.noise_pref_gap)
-            preferences_batch = np.ones((self.n_pairs,), dtype=np.float32)
             self.dataset.push(fragments_batch, preferences_batch) # should evict previous batch as it acts like a deque
             self.reward_trainer.train(self.dataset)
 
