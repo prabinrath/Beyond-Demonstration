@@ -15,22 +15,20 @@ import numpy as np
 rng = np.random.default_rng(0)
 
 from .drex import DREX
+from .custom_rw import SquashRewardNet, get_ensemble_members
 
 ''' TODO
 IDEAS:
-- Clip reward (-10,10) for quicker convergence of value function in RL
-- Reward is extrapolating but noise performance relationship needs to be modeled implicitly
 - Train BC for less epochs. ranked_trajectories mostly has positive true rewards which causes problems during initial training phase
-- Reward extrapolation is happening but rw network has not seen enough transition cases from -ve to +ve
 - Fit rewards networks across stages (epochs of BC) and choose the appropriate reward with learnable parameters
-- Seems no point in mixed sampling. Use a more complex single network or separate network per stage with learnable sourcing
-- Wrapped reward is unable to extrapolate beyond a limit (still the extrapolation is impressive)
+- Seems no point in mixed sampling. Use a more complex single network or separate network per stage with learnable sourcing might work better
 - PPO kl divergence increases at extrapolation limits. specify max kl div limit in RL
 - Try SAC
 
 OTHER POSSIBLE IMPROVEMENTS
+- Reward is extrapolating but noise performance relationship needs to be modeled implicitly
 - Use regularizers in rewards trainer
-- early stopping (imitation.testing.reward_improvement)
+- Early stopping (imitation.testing.reward_improvement)
 - Use custom rewards (more hidden units, rnn, attention)
 - A better preference loss (aLRP?)
 
@@ -72,17 +70,10 @@ def main():
     bc_trainer.train(n_epochs=10)
 
     # Reward model
-    reward_members = [BasicRewardNet(
-                        env.observation_space,
-                        env.action_space,
-                        use_action=False, # TREX has state only reward functions
-                        normalize_input_layer=RunningNorm,
-                        hid_sizes=(256,256))
-                        for _ in range(N_REWARD_MODELS)]
     reward_net = RewardEnsemble(
         env.observation_space, 
         env.action_space, 
-        members=reward_members
+        members=get_ensemble_members(SquashRewardNet, N_REWARD_MODELS, env)
     )
 
     # Luce-Shephard preference model
@@ -107,36 +98,11 @@ def main():
         fragment_len=FRAGMENT_LEN,
         rng=rng
     )
-    # reward_loss, reward_accuracy = drex_trainer.train(N_EPOCHS)
-    # print(f"Reward Loss: {reward_loss}, Reward Acc: {reward_accuracy}")
-    # torch.save(reward_net.state_dict(), 'checkpoints/drex_reward_net/DREX-'+ENV_ID+'.pth')
+    reward_loss, reward_accuracy = drex_trainer.train(N_EPOCHS)
+    print(f"Reward Loss: {reward_loss}, Reward Acc: {reward_accuracy}")
+    torch.save(reward_net.state_dict(), 'checkpoints/drex_reward_net/DREX-'+ENV_ID+'.pth')
 
-    reward_net.load_state_dict(torch.load('checkpoints/drex_reward_net/DREX-'+ENV_ID+'.pth'))
-
-    fragments, preferences = drex_trainer.generate_fragments_and_preferences(drex_trainer.ranked_trajectories, 100, 50, 0.3)
-    for i in range(len(fragments)):
-        fragment = fragments[i]
-        idx_a, idx_b = 0, 1
-        reward_1, reward_2 = np.sum(fragment[idx_a].rews), np.sum(fragment[idx_b].rews)
-        gt_prob = 1/(1+np.exp(reward_2-reward_1))
-        gt_loss = -np.log(gt_prob)
-        predicted_reward_1 = []
-        for i in range(fragment[idx_a].acts.shape[0]):
-            obs, act, next_obs, done = fragment[idx_a].obs[i][None,:], fragment[idx_a].acts[i][None,:], fragment[idx_a].obs[i+1][None,:], np.array([False])
-            predicted_reward_1.append(reward_net.predict(obs, act, next_obs, done))
-        predicted_reward_1 = np.sum(predicted_reward_1)
-        predicted_reward_2 = []
-        for i in range(fragment[idx_b].acts.shape[0]):
-            obs, act, next_obs, done = fragment[idx_b].obs[i][None,:], fragment[idx_b].acts[i][None,:], fragment[idx_b].obs[i+1][None,:], np.array([False])
-            predicted_reward_2.append(reward_net.predict(obs, act, next_obs, done))
-        predicted_reward_2 = np.sum(predicted_reward_2)
-        pred_prob = 1/(1+np.exp(predicted_reward_2-predicted_reward_1))
-        pred_loss = -np.log(pred_prob)
-        # print(f"GT: {gt_prob}, Predicted: {pred_prob}")
-        print(f"True reward: {(reward_1, reward_2)}, Predicted reward: {(predicted_reward_1, predicted_reward_2)}, GT: {gt_prob}, Predicted: {pred_prob}")
-    
-    print('---------------------------------------------------------------------------------------------------')
-
+    # reward_net.load_state_dict(torch.load('checkpoints/drex_reward_net/DREX-'+ENV_ID+'.pth'))
     for noise_level in drex_trainer.ranked_trajectories:
         rollouts = drex_trainer.ranked_trajectories[noise_level]
         for roll in rollouts:
