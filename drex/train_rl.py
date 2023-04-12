@@ -36,8 +36,6 @@ learner = algo[ALGO_ID](policy="MlpPolicy",
                         # n_steps=4096,
                         verbose=1
                         ) 
-reward, _ = evaluate_policy(learner, venv, 10, deterministic=False)
-print("Avg reward before training:", reward)
-learner.learn(1000000, callback=learned_reward_venv.make_log_callback())
+learner.learn(2000000, callback=learned_reward_venv.make_log_callback())
 reward, _ = evaluate_policy(learner, venv, 10)
 print("Avg reward after training:", reward)

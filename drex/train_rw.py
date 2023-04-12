@@ -21,9 +21,10 @@ from .custom_rw import SquashRewardNet, get_ensemble_members
 IDEAS:
 - Train BC for less epochs. ranked_trajectories mostly has positive true rewards which causes problems during initial training phase
 - Fit rewards networks across stages (epochs of BC) and choose the appropriate reward with learnable parameters
-- Seems no point in mixed sampling. Use a more complex single network or separate network per stage with learnable sourcing might work better
 - PPO kl divergence increases at extrapolation limits. specify max kl div limit in RL
 - Try SAC
+- Try shaped rewards
+- Wrapped reward should remain -ve until true reward crosses 0 for stability
 
 OTHER POSSIBLE IMPROVEMENTS
 - Reward is extrapolating but noise performance relationship needs to be modeled implicitly
@@ -55,7 +56,7 @@ def main():
     K = 5 # rollouts per noise level
     N_NOISE_LEVELS = 20 # noise levels
     N_REWARD_MODELS = 3 # ensemble reward models
-    N_EPOCHS = 10 # reward training epochs
+    N_EPOCHS = 5 # reward training epochs
     FRAGMENT_LEN = 50 # length of trajectory fragments
     N_PAIRS = 5000 # batch size for each training epoch
     NOISE_PREF_GAP = 0.3 # min noise gap between trajectory pairs

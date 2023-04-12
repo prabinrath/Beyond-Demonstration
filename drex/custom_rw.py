@@ -27,7 +27,7 @@ class SquashRewardNet(BasicRewardNet):
         # low, high = -self.threshold, self.threshold
         # new_outputs = 2.0 * ((outputs - low) / (high - low)) - 1.0
 
-        new_outputs = th.tanh(outputs)
+        new_outputs = 1*th.tanh(outputs)
 
         return new_outputs
 
