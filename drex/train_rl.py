@@ -1,5 +1,5 @@
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
-from imitation.rewards.reward_nets import RewardEnsemble
+from imitation.util.networks import RunningNorm
 
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -9,7 +9,7 @@ import gym
 import torch
 
 import argparse
-from .custom_rw import SquashRewardNet, get_ensemble_members
+from .custom_rw import SquashRewardNet
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=None)
@@ -21,17 +21,18 @@ if __name__ == "__main__":
     algo = {"PPO": PPO, "SAC": SAC}
     ENV_ID = args.env
     # variable horizon should be disabled for sampling equal length trajectories
-    env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
-    # env_factory = lambda: gym.make(ENV_ID)
+    # env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+    env_factory = lambda: gym.make(ENV_ID)
     env = env_factory()
 
     # Load reward model
-    N_REWARD_MODELS = 3 # ensemble reward models
-    reward_net = RewardEnsemble(
-        env.observation_space, 
-        env.action_space, 
-        members=get_ensemble_members(SquashRewardNet, N_REWARD_MODELS, env)
-    )
+    reward_net = SquashRewardNet(
+                    env.observation_space,
+                    env.action_space,
+                    threshold=1,
+                    use_action=False, # TREX has state only reward functions
+                    normalize_input_layer=RunningNorm,
+                    hid_sizes=(256,256))
     reward_net.load_state_dict(torch.load('checkpoints/drex_reward_net/DREX-'+ENV_ID+'.pth'))
 
     # Train RL

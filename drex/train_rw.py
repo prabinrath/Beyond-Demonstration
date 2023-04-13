@@ -1,30 +1,28 @@
 from imitation.data.types import load
 from imitation.algorithms.bc import BC
-from imitation.rewards.reward_nets import RewardEnsemble
+from imitation.util.networks import RunningNorm
 from imitation.algorithms.preference_comparisons import (
-        PreferenceModel, 
-        EnsembleTrainer,
+        PreferenceModel,
+        BasicRewardTrainer,
         CrossEntropyRewardLoss
     )
 
 import gym
-from gym.wrappers import TimeLimit
 import torch
 import numpy as np
 rng = np.random.default_rng(12345)
 
 import argparse
 from .drex import DREX
-from .custom_rw import SquashRewardNet, get_ensemble_members
+from .custom_rw import SquashRewardNet
 
 ''' TODO
 IDEAS:
 - Fit rewards networks across stages (epochs of BC) and choose the appropriate reward with learnable parameters
-- Try SAC
 - Try shaped rewards
+- Ant env is difficult. Try with a more fine noise schedule and smaller margin
 
 OTHER POSSIBLE IMPROVEMENTS
-- Early stopping (imitation.testing.reward_improvement)
 - Use custom rewards (more hidden units, rnn, attention)
 - A better preference loss (aLRP?)
 
@@ -33,6 +31,7 @@ IDEAS IMPLEMENTED:
 - Mixed sampling
 - Fixed horizon rollouts for ranked_trajectories
 - Input normalization in reward function
+- Reward scaling with tanh
 
 PPT:
 - GT vs NN reward comparison
@@ -48,15 +47,14 @@ if __name__ == "__main__":
     EXPERT_ID = args.expert
     ENV_ID = args.env
     # variable horizon should be disabled for sampling equal length trajectories
-    env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False), 1000)
-    # env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000)
+    env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+    # env_factory = lambda: gym.make(ENV_ID)
     env = env_factory()
 
     demo_path = 'demonstrations/sub-optimal/'+ENV_ID+'-'+EXPERT_ID
 
     K = 5 # rollouts per noise level
     N_NOISE_LEVELS = 20 # noise levels
-    N_REWARD_MODELS = 3 # ensemble reward models
     N_EPOCHS = 10 # reward training epochs
     FRAGMENT_LEN = 50 # length of trajectory fragments
     N_PAIRS = 5000 # batch size for each training epoch
@@ -72,15 +70,17 @@ if __name__ == "__main__":
     bc_trainer.train(n_epochs=10)
 
     # Reward model
-    reward_net = RewardEnsemble(
-        env.observation_space, 
-        env.action_space, 
-        members=get_ensemble_members(SquashRewardNet, N_REWARD_MODELS, env)
-    )
+    reward_net = SquashRewardNet(
+                    env.observation_space,
+                    env.action_space,
+                    threshold=1,
+                    use_action=False, # TREX has state only reward functions
+                    normalize_input_layer=RunningNorm,
+                    hid_sizes=(256,256))
 
     # Luce-Shephard preference model
     preference_model = PreferenceModel(reward_net, noise_prob=0.1, discount_factor=0.99)
-    reward_trainer = EnsembleTrainer(
+    reward_trainer = BasicRewardTrainer(
         preference_model=preference_model,
         loss=CrossEntropyRewardLoss(),
         batch_size=64,
