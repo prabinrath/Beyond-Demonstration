@@ -8,7 +8,6 @@ from imitation.rewards.reward_nets import BasicShapedRewardNet
 from imitation.util.networks import RunningNorm
 
 import gym
-from gym.wrappers import TimeLimit
 import numpy as np
 
 ALGO_ID = "PPO"
@@ -18,9 +17,9 @@ EXPERT_ID = ALGO_ID+"-35"
 
 ENV_ID = "Hopper-v3"
 
-# variable horizon should be disabled for imitation
-env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False), 1000)
-# env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000)
+# variable horizon should be disabled for sampling equal length trajectories
+env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+# env_factory = lambda: gym.make(ENV_ID)
 
 venv = make_vec_env(env_factory, n_envs=4)
 

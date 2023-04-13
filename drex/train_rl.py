@@ -6,7 +6,6 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3 import PPO, SAC
 
 import gym
-from gym.wrappers import TimeLimit
 import torch
 
 import argparse
@@ -22,8 +21,8 @@ if __name__ == "__main__":
     algo = {"PPO": PPO, "SAC": SAC}
     ENV_ID = args.env
     # variable horizon should be disabled for sampling equal length trajectories
-    env_factory = lambda: TimeLimit(gym.make(ENV_ID, terminate_when_unhealthy=False), 1000)
-    # env_factory = lambda: TimeLimit(gym.make(ENV_ID), 1000)
+    env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+    # env_factory = lambda: gym.make(ENV_ID)
     env = env_factory()
 
     # Load reward model

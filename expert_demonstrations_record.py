@@ -6,22 +6,21 @@ from stable_baselines3.common.env_util import make_vec_env
 ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
-ENV_ID = "HalfCheetah-v3"
+ENV_ID = "Ant-v3"
 env_factory = lambda: gym.make(ENV_ID) # variable horizon is important for training the expert
 
 venv = make_vec_env(env_factory, n_envs=4)
 expert = algo[ALGO_ID]("MlpPolicy", venv, verbose=1)
 
-reward, _ = evaluate_policy(expert, venv, 10)
-print("Avg reward before training:", reward)
 expert.learn(total_timesteps=500000)
 reward, _ = evaluate_policy(expert, venv, 10)
 print("Avg reward after training:", reward)
 
 expert.save('checkpoints/expert_policies/'+ENV_ID+'-'+ALGO_ID)
 
-optimality = "sub-optimal/"
-expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
+# optimality = "sub-optimal/"
+# # optimality = ""
+# expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
 
 from imitation.data.types import save
 from imitation.data import rollout
