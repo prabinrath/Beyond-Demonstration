@@ -17,7 +17,7 @@ bc_trainer = BC(
     rng=rng,
 )
 
-reward, _ = evaluate_policy(bc_trainer.policy, env, 10)
+reward, _ = evaluate_policy(bc_trainer.policy, env, 10, deterministic=False)
 print("Avg reward before training:", reward)
 bc_trainer.train(n_epochs=5)
 reward, _ = evaluate_policy(bc_trainer.policy, env, 10)

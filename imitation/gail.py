@@ -42,8 +42,6 @@ gail_trainer = GAIL(
     reward_net=reward_net,
 )
 
-reward, _ = evaluate_policy(learner, venv, 10)
-print("Avg reward before training:", reward)
 gail_trainer.train(500000)
 reward, _ = evaluate_policy(learner, venv, 10)
 print("Avg reward after training:", reward)
