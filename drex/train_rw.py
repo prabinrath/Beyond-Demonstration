@@ -1,7 +1,6 @@
 from imitation.data.types import load
 from imitation.algorithms.bc import BC
-from imitation.util.networks import RunningNorm
-from imitation.rewards.reward_nets import RewardEnsemble, BasicRewardNet
+from imitation.rewards.reward_nets import RewardEnsemble
 from imitation.algorithms.preference_comparisons import (
         PreferenceModel, 
         EnsembleTrainer,
@@ -12,16 +11,14 @@ import gym
 from gym.wrappers import TimeLimit
 import torch
 import numpy as np
-rng = np.random.default_rng(0)
+rng = np.random.default_rng(12345)
 
 from .drex import DREX
 from .custom_rw import SquashRewardNet, get_ensemble_members
 
 ''' TODO
 IDEAS:
-- Train BC for less epochs. ranked_trajectories mostly has positive true rewards which causes problems during initial training phase
 - Fit rewards networks across stages (epochs of BC) and choose the appropriate reward with learnable parameters
-- PPO kl divergence increases at extrapolation limits. specify max kl div limit in RL
 - Try SAC
 - Try shaped rewards
 - Wrapped reward should remain -ve until true reward crosses 0 for stability
@@ -56,7 +53,7 @@ def main():
     K = 5 # rollouts per noise level
     N_NOISE_LEVELS = 20 # noise levels
     N_REWARD_MODELS = 3 # ensemble reward models
-    N_EPOCHS = 5 # reward training epochs
+    N_EPOCHS = 10 # reward training epochs
     FRAGMENT_LEN = 50 # length of trajectory fragments
     N_PAIRS = 5000 # batch size for each training epoch
     NOISE_PREF_GAP = 0.3 # min noise gap between trajectory pairs

@@ -1,5 +1,5 @@
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
-from imitation.rewards.reward_nets import RewardEnsemble, BasicRewardNet
+from imitation.rewards.reward_nets import RewardEnsemble
 
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -36,6 +36,7 @@ learner = algo[ALGO_ID](policy="MlpPolicy",
                         # n_steps=4096,
                         verbose=1
                         ) 
-learner.learn(2000000, callback=learned_reward_venv.make_log_callback())
+learner.learn(1000000, callback=learned_reward_venv.make_log_callback())
 reward, _ = evaluate_policy(learner, venv, 10)
 print("Avg reward after training:", reward)
+learner.save('checkpoints/drex_policy_net/DREX-'+ENV_ID+'-'+ALGO_ID+'.pth')

@@ -34,7 +34,7 @@ class NoiseInjectedPolicyWrapper(BasePolicy):
     def predict(self, observation, state = None, episode_start = None, deterministic = False):
         if self.action_noise_type == 'epsilon':
             if np.random.random() < self.epsilon:
-                return self.action_space.sample()
+                action = np.expand_dims(self.action_space.sample(), 0)
             else:
                 action, _ = self.policy.predict(observation, deterministic)
         else:
@@ -74,7 +74,7 @@ class DREX(BaseImitationAlgorithm):
         
         noise_schedule = np.linspace(0,1,n_noise_levels)
         self.ranked_trajectories = self.generate_ranked_trajectories(noise_schedule, k, env_factory(), 
-                                                        expert, action_noise_type='normal',
+                                                        expert, action_noise_type='epsilon',
                                                         rng=rng)
         self.log_rankings(self.ranked_trajectories)        
         self.dataset = PreferenceDataset(max_size=n_pairs) # allow infinite queue size
