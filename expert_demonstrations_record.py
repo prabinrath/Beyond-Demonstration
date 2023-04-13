@@ -12,7 +12,7 @@ env_factory = lambda: gym.make(ENV_ID) # variable horizon is important for train
 venv = make_vec_env(env_factory, n_envs=4)
 expert = algo[ALGO_ID]("MlpPolicy", venv, verbose=1)
 
-expert.learn(total_timesteps=500000)
+expert.learn(total_timesteps=1000000)
 reward, _ = evaluate_policy(expert, venv, 10)
 print("Avg reward after training:", reward)
 
@@ -28,7 +28,7 @@ from imitation.data.wrappers import RolloutInfoWrapper
 from stable_baselines3.common.vec_env import DummyVecEnv
 import numpy as np
 
-NUM_EPISODES = 10
+NUM_EPISODES = 20
 rollouts = rollout.rollout(
     expert,
     DummyVecEnv([lambda: RolloutInfoWrapper(env_factory())]),

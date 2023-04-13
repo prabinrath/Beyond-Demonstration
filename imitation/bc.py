@@ -5,8 +5,8 @@ import gym
 import numpy as np
 rng = np.random.default_rng(0)
 
-EXPERT_ID = "PPO-35"
-ENV_ID = "Hopper-v3"
+EXPERT_ID = "PPO-10"
+ENV_ID = "Ant-v3"
 env = gym.make(ENV_ID) # variable horizon is true for fair evaluation
 
 rollouts = load('demonstrations/sub-optimal/'+ENV_ID+'-'+EXPERT_ID)
@@ -17,7 +17,7 @@ bc_trainer = BC(
     rng=rng,
 )
 
-reward, _ = evaluate_policy(bc_trainer.policy, env, 10, deterministic=False)
+reward, _ = evaluate_policy(bc_trainer.policy, env, 10)
 print("Avg reward before training:", reward)
 bc_trainer.train(n_epochs=5)
 reward, _ = evaluate_policy(bc_trainer.policy, env, 10)

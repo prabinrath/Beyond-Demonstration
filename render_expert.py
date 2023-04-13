@@ -4,7 +4,7 @@ import gym
 import time
 import numpy as np
 
-ALGO_ID = "SAC"
+ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
 ENV_ID = "Ant-v3"
@@ -27,7 +27,7 @@ for i in range(5):
     episode_reward = 0
     act_square_sum = 0
     while not done:
-        action, _ = expert.predict(obs, deterministic=False)
+        action, _ = expert.predict(obs, deterministic=True)
         # action = env.action_space.sample()
         act_square_sum += np.sum(np.squeeze(action)**2)
         obs, reward, done, info = env.step(action)

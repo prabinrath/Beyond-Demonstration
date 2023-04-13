@@ -31,12 +31,12 @@ class SquashRewardNet(BasicRewardNet):
 
         return new_outputs
 
-def get_ensemble_members(net_class, num_models, env):
+def get_ensemble_members(net_class, num_models, env, use_action=False):
     reward_members = [net_class(
                         env.observation_space,
                         env.action_space,
                         threshold=1,
-                        use_action=False, # TREX has state only reward functions
+                        use_action=use_action, # TREX has state only reward functions
                         normalize_input_layer=RunningNorm,
                         hid_sizes=(256,256))
                         for _ in range(num_models)]
