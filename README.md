@@ -31,7 +31,7 @@ Other possible improvements
 Better than demonstrator performance was observed for HalfCheetah-v3 environment. For Hopper-v3, we achieved equal to demonstration performance.
 | Demonstration | Learned Policy |
 | ------- | ------- |
-| <img src="media/hc_demo.gif" width="500" height="300"> | <img src="media/hc_better.gif" width="500" height="300">  |
+| ![alt text 1](media/hc_demo.gif "Hopper Demo") | ![alt text 1](media/hc_better.gif "Hopper Better") |
 | <img src="media/hp_demo.gif" width="500" height="300"> | <img src="media/hp_better.gif" width="500" height="300">  |
 
 Ground Truth reward to Predicted reward corelation (unscaled)
