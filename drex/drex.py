@@ -77,7 +77,7 @@ class DREX(BaseImitationAlgorithm):
                                                         expert, action_noise_type='epsilon',
                                                         rng=rng)
         self.log_rankings(self.ranked_trajectories)        
-        self.dataset = PreferenceDataset(max_size=n_pairs) # allow infinite queue size
+        self.dataset = PreferenceDataset(max_size=n_pairs) # allow finite queue size for flusing every epoch
 
     def generate_ranked_trajectories(self, noise_schedule, k, env, expert, action_noise_type, rng):
         self.logger.log(f"Generating ranked trajectories with schedule {noise_schedule}")
