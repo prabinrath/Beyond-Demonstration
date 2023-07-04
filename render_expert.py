@@ -7,14 +7,14 @@ import numpy as np
 ALGO_ID = "PPO"
 algo = {"PPO": PPO, "SAC": SAC}
 
-ENV_ID = "Ant-v3"
-optimality = "sub-optimal/"
-# optimality = ""
-expert = algo[ALGO_ID].load('checkpoints/expert_policies/'+optimality+ENV_ID+'-'+ALGO_ID)
+ENV_ID = "HalfCheetah-v3"
+# optimality = "sub-optimal/"
+optimality = ""
+expert = algo[ALGO_ID].load('checkpoints/drex_policy_net/DREX-'+optimality+ENV_ID+'-'+ALGO_ID)
 
 # variable horizon should be disabled for sampling equal length trajectories
-env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
-# env_factory = lambda: gym.make(ENV_ID)
+# env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+env_factory = lambda: gym.make(ENV_ID)
 env = env_factory()
 
 # expert = algo[ALGO_ID]('MlpPolicy', env)

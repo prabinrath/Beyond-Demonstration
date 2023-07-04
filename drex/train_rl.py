@@ -9,7 +9,7 @@ import gym
 import torch
 
 import argparse
-from .custom_rw import SquashRewardNet
+from custom_rw import SquashRewardNet
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=None)
