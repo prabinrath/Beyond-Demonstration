@@ -13,8 +13,8 @@ import numpy as np
 rng = np.random.default_rng(12345)
 
 import argparse
-from .drex import DREX
-from .custom_rw import SquashRewardNet
+from drex import DREX
+from custom_rw import SquashRewardNet
 
 ''' TODO
 IDEAS:
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     EXPERT_ID = args.expert
     ENV_ID = args.env
     # variable horizon should be disabled for sampling equal length trajectories
-    env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
-    # env_factory = lambda: gym.make(ENV_ID)
+    # env_factory = lambda: gym.make(ENV_ID, terminate_when_unhealthy=False)
+    env_factory = lambda: gym.make(ENV_ID)
     env = env_factory()
 
     demo_path = 'demonstrations/sub-optimal/'+ENV_ID+'-'+EXPERT_ID
